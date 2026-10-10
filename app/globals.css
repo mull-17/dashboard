@@ -1,8 +1,7 @@
 @import "tailwindcss";
-
+/* Tailwind v3 */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -20,7 +19,7 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: #f5f5fa;
+  color: #0f172a;
   font-family: Arial, Helvetica, sans-serif;
 }

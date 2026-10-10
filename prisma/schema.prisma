@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Game {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  publisher   String?
+  imageUrl    String?
+  bannerUrl   String?
+  category    String
+  isActive    Boolean   @default(true)
+  inputFields Json      @default("[{\"key\": \"userId\", \"label\": \"User ID\", \"required\": true}]")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  orders      Order[]
+  products    Product[]
+
+  @@index([category])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  gameId      String
+  name        String
+  description String?
+  price       Int
+  basePrice   Int?
+  stock       Int?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orders      Order[]
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  orderNumber   String      @unique
+  gameId        String
+  productId     String
+  playerInputs  Json
+  customerEmail String?
+  customerPhone String?
+  price         Decimal
+  status        OrderStatus @default(PENDING)
+  paymentMethod String?
+  paymentRef    String?
+  paymentUrl    String?
+  note          String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  game          Game        @relation(fields: [gameId], references: [id])
+  product       Product     @relation(fields: [productId], references: [id])
+  resellerId    String?
+  reseller      Reseller?   @relation(fields: [resellerId], references: [id])
+
+  @@index([orderNumber])
+  @@index([status])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model LoginAttempt {
+  id        Int      @id @default(autoincrement())
+  ip        String
+  createdAt DateTime @default(now())
+
+  @@index([ip, createdAt])
+}
+
+enum ResellerLevel {
+  BRONZE
+  SILVER
+  GOLD
+}
+
+model Reseller {
+  id        String        @id @default(cuid())
+  name      String
+  phone     String?       @unique
+  email     String?       @unique
+  level     ResellerLevel @default(BRONZE)
+  active    Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  orders    Order[]
+}
+
+enum VoucherType {
+  PERCENT
+  FIXED
+}
+
+model Voucher {
+  id        String      @id @default(cuid())
+  code      String      @unique
+  type      VoucherType
+  value     Int
+  quota     Int
+  used      Int         @default(0)
+  active    Boolean     @default(true)
+  expiresAt DateTime
+  createdAt DateTime    @default(now())
+}
+
+model Admin {
+  id           String          @id @default(cuid())
+  email        String          @unique
+  passwordHash String
+  createdAt    DateTime        @default(now())
+  resets       PasswordReset[]
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  adminId   String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  admin     Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+}
